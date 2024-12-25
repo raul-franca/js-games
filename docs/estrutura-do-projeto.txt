@@ -1,0 +1,37 @@
+.
+├── README.md
+├── docs
+│   ├── estrutura-do-projeto.txt
+│   └── referencias.txt
+├── kontra
+│   ├── index.html
+│   └── kontra.js
+├── package-lock.json
+├── package.json
+├── pixi-test
+│   ├── index.html
+│   ├── pixi.js
+│   └── sample.png
+├── pong
+│   ├── assets
+│   │   └── style.css
+│   ├── index.html
+│   └── src
+│       ├── main.js
+│       └── pong.js
+├── snake
+│   ├── assets
+│   │   └── style.css
+│   ├── index.html
+│   └── src
+│       ├── main.js
+│       └── snake.js
+└── space-invaders
+    ├── assets
+    │   └── style.css
+    ├── index.html
+    └── src
+        ├── main.js
+        └── space-invaders.js
+
+13 directories, 22 files
