@@ -1,82 +1,173 @@
 (function () {
-    // Inicializa o canvas com id='snake-game' e obtém context para desenhar
-    let { canvas, context } = kontra.init('snake-game');
 
-    // Inicializa o score
+    /* ----------------------------------------------------------------
+     * 1) CONFIGURAÇÕES E VARIÁVEIS GLOBAIS
+     * ---------------------------------------------------------------- */
+    // Inicializa o canvas com id='snake-game' e obtém context para desenhar
+    const { canvas } = kontra.init("snake-game");
+
+    // Elementos de interface
+    const displayScore = document.getElementById("score");
+    const infos = document.getElementById("infos");
+
+    // Variável de pontuação
     let score = 0;
-    let infos = document.getElementById("infos");
+
+    // Variável para controle do modo automático
+    let autoPilotActive = true;
+
+    // Tamanho de cada célula do grid
+    const grid = 30;
+
+    // Taxa de atualização do jogo (frames por segundo)
+    let fps = 10;
+
+    // Calcula quantas linhas e colunas cabem no canvas
+    const numRows = canvas.height / grid;
+    const numCols = canvas.width / grid;
+
+    // Vetor que guardará índices de cada célula livre do grid.
+    let freeCells = [];
+
+    // Sprites da cobra (snake) e da maçã (apple)
+    const snake = kontra.Sprite();
+    const apple = kontra.Sprite();
 
     // Inicializa o sistema de captura de teclas da Kontra.js
     kontra.initKeys();
 
 
-    // Tamanho de cada célula do grid (cada quadradinho no jogo)
-    const grid = 20;
-
-    // Calcula quantas linhas e colunas cabem no canvas
-    let numRows = canvas.height / grid;
-    let numCols = canvas.width / grid;
-
-
-    // Cria dois sprites: um para a cobra (snake) e outro para a maçã (apple)
-    let snake = kontra.Sprite();
-    let apple = kontra.Sprite();
-
-    // Vetor que guardará índices de cada célula livre do grid.
-    // Cada célula do grid é numerada de 0 até numRows*numCols - 1
-    // Ex: se numCols=20, a célula (row=1, col=5) teria índice 1*20 + 5 = 25
-    let freeCells = [];
-    for (let row = 0; row < numRows; row++) {
-        for (let col = 0; col < numCols; col++) {
-            freeCells.push(row * numCols + col);
-        }
-    }
+    /* ----------------------------------------------------------------
+     * 2) FUNÇÕES AUXILIARES
+     * ---------------------------------------------------------------- */
 
 
     /**
-     * Retorna um inteiro aleatório entre min (inclusivo) e max (exclusivo)
-     * Usado aqui para escolher uma célula livre aleatória
+     * Função para controle automático da cobra (modo auto-pilot).
+     */
+    function autoPilot(snake, apple, grid) {
+        if (!snake.cells || snake.cells.length === 0) return;
+
+        // Posição da cabeça da cobra (primeiro segmento)
+        const headX = snake.cells[0].x;
+        const headY = snake.cells[0].y;
+
+        // Se a cabeça está à esquerda da maçã, vá para a direita
+        if (headX < apple.x) {
+            // Evita virar 180 graus instantaneamente se estiver indo para esquerda
+            if (snake.dx !== -grid) {
+                snake.dx = grid;
+                snake.dy = 0;
+            }
+        }
+        else if (headX > apple.x) {
+            // Evita virar para a direita se está indo para esquerda
+            if (snake.dx !== grid) {
+                snake.dx = -grid;
+                snake.dy = 0;
+            }
+        }
+        // Se a cobra está alinhada no eixo X, tenta alinhar no eixo Y
+        else {
+            // Se a cabeça está acima da maçã, vá para baixo
+            if (headY < apple.y) {
+                if (snake.dy !== -grid) {
+                    snake.dy = grid;
+                    snake.dx = 0;
+                }
+            }
+            // Senão, se está abaixo da maçã, vá para cima
+            else if (headY > apple.y) {
+                if (snake.dy !== grid) {
+                    snake.dy = -grid;
+                    snake.dx = 0;
+                }
+            }
+        }
+    }
+
+    /**
+     * Gera o array inicial de células livres (todas as posições do grid).
+     */
+    function initFreeCells() {
+        freeCells = [];
+        for (let row = 0; row < numRows; row++) {
+            for (let col = 0; col < numCols; col++) {
+                freeCells.push(row * numCols + col);
+            }
+        }
+    }
+
+    /**
+     * Retorna um inteiro aleatório entre min (inclusivo) e max (exclusivo).
      */
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
     /**
-     * Retorna a posição (x, y) de uma célula aleatória que esteja livre
-     * para colocar a maçã
+     * Retorna a posição (x, y) de uma célula aleatória livre para posicionar a maçã.
      */
     function getApplePos() {
         // Escolhe um índice aleatório no array de células livres
-        let cell = getRandomInt(0, freeCells.length - 1);
-
+        const randomIndex = getRandomInt(0, freeCells.length - 1);
+        const cell = freeCells[randomIndex]; // Índice da célula livre escolhida
         // Converte esse índice de volta para coordenadas x e y
         return {
             x: (cell % numCols) * grid,
-            y: ((cell / numCols) | 0) * grid
+            y: Math.floor(cell / numCols) * grid
+            // * grid para obter a posição em píxeis
         };
     }
 
     /**
-     * Reinicia o estado do jogo: posiciona a cobra e a maçã,
-     * definindo também tamanho e células iniciais da cobra
+     * Atualiza na tela as informações de debug (score, dimensões, etc.).
      */
+    function updateInfos() {
+        infos.innerHTML = `
+      Informações: <br>
+      Tamanho grid: ${grid} <br>
+      Velocidade: ${fps}fps <br>
+      Canvas: ${canvas.width}x${canvas.height} <br>
+      numRows: ${numRows} | numCols: ${numCols} <br>
+        freeCells: ${freeCells.length} <br>
+      <br>
+      autoPilot: ${autoPilotActive} <br>
+      snake.dx: ${snake.dx} | snake.dy: ${snake.dy} <br>
+      snake.cells: ${snake.cells.length} <br>
+      snake(x,y): (${snake.x}, ${snake.y}) <br>
+      apple(x,y): (${apple.x}, ${apple.y}) <br>
+      
+    `;
+        displayScore.innerHTML = score;
+    }
+
+
+    /* ----------------------------------------------------------------
+     * 3) FUNÇÃO PRINCIPAL DE REINÍCIO (RESET) DO JOGO
+     * ---------------------------------------------------------------- */
     function reset() {
+        // Reinicia a pontuação e o texto do score
         score = 0;
-        document.getElementById("score").innerHTML = score;
+
+        // Recria lista de células livres
+        initFreeCells();
+
+        // Inicializa a cobra
         snake.init({
             x: 10 * grid,     // Posição inicial (coluna 10)
             y: 5 * grid,      // Posição inicial (linha 5)
-            dx: grid,         // Movimento horizontal (vai se mover para a direita)
-            color: 'green',
+            dx: grid,         // Movimento inicial para a direita
+            dy: 0,
+            color: "green",
             cells: [],        // Lista de coordenadas ocupadas pela cobra
-            maxCells: 4,      // Tamanho inicial da cobra (4 segmentos)
+            maxCells: 4,      // Tamanho inicial da cobra
 
-            // Função de atualização (chamada a cada frame do jogo)
+            // Atualização da cobra a cada frame
             update: function () {
                 this.advance();
 
-                // Faz a cobra “aparecer do outro lado” se passar do limite
-                // Efeito de wrap horizontal e vertical
+                // Faz wrap da cobra nas bordas do canvas
                 if (this.x < 0) {
                     this.x = canvas.width - grid;
                 } else if (this.x >= canvas.width) {
@@ -88,39 +179,44 @@
                     this.y = 0;
                 }
 
-                // Coloca a nova posição da cabeça da cobra
-                // no início do array (unshift)
+                // Adiciona nova posição da cabeça no início do array
                 this.cells.unshift({ x: this.x, y: this.y });
 
-                // Remove a célula da lista de livres, pois agora a cobra ocupa esse espaço
-                let cellIndex = freeCells.indexOf((this.y / grid) * numCols + this.x / grid);
-                freeCells.splice(cellIndex, 1);
-
-                // Se a cobra ultrapassou o tamanho máximo, remove a cauda
-                if (this.cells.length > this.maxCells) {
-                    let cell = this.cells.pop();
-                    // Adiciona de volta a célula removida (cauda) na lista de células livres
-                    freeCells.push((cell.y / grid) * numCols + cell.x / grid);
+                // Remove a célula da lista de livres (cobra ocupa agora)
+                const headCellIndex = (this.y / grid) * numCols + (this.x / grid);
+                const freeIndex = freeCells.indexOf(headCellIndex);
+                if (freeIndex !== -1) {
+                    freeCells.splice(freeIndex, 1);
                 }
 
-                // Verifica colisões com maçã e com o próprio corpo
+                // Remove a cauda se ultrapassou o tamanho máximo
+                if (this.cells.length > this.maxCells) {
+                    const tailCell = this.cells.pop();
+                    // Devolve a célula removida à lista de livres
+                    freeCells.push((tailCell.y / grid) * numCols + (tailCell.x / grid));
+                }
+
+                // Verifica colisões (maçã e corpo da cobra)
+                this.checkCollisions();
+            },
+
+            // Checa colisões da cobra com a maçã e com ela mesma
+            checkCollisions: function () {
+                // Percorre todos os segmentos (primeiro é a cabeça)
                 this.cells.forEach(
                     function (cell, index) {
-                        // Se a cabeça da cobra (index === 0) ocupa mesma posição da maçã,
-                        // então a cobra "come" a maçã
+                        // Cabeça da cobra encontra a maçã
                         if (index === 0 && cell.x === apple.x && cell.y === apple.y) {
                             score++;
-                            document.getElementById("score").innerHTML = score;
                             this.maxCells++;
-                            // Gera nova posição para a maçã
-                            let pos = getApplePos();
+                            // Escolhe nova posição para a maçã
+                            const pos = getApplePos();
                             apple.x = pos.x;
                             apple.y = pos.y;
                         }
 
-                        // Verifica colisão da cobra consigo mesma
+                        // Checa colisão da cabeça com os outros segmentos (auto-colisão)
                         for (let i = index + 1; i < this.cells.length; i++) {
-                            // Se algum outro segmento ocupa a mesma posição, reset do jogo
                             if (cell.x === this.cells[i].x && cell.y === this.cells[i].y) {
                                 reset();
                             }
@@ -129,15 +225,12 @@
                 );
             },
 
-            // Função para renderizar a cobra
+            // Renderiza a cobra (cada segmento)
             render: function () {
-                // Define cor para desenhar a cobra
                 this.context.fillStyle = this.color;
-
-                // Para cada segmento da cobra, desenha um retângulo
-                // Note que é desenhado relativo à posição atual do sprite
                 this.cells.forEach(
                     function (cell) {
+                        // Desenha cada segmento com base na posição de cada célula
                         this.context.fillRect(
                             cell.x - this.x,
                             cell.y - this.y,
@@ -149,64 +242,88 @@
             }
         });
 
-        // Posiciona a maçã (apple)
-        let pos = getApplePos();
+        // Inicializa a posição da maçã
+        const pos = getApplePos();
         apple.init({
             x: pos.x,
             y: pos.y,
-            color: 'red',
+            color: "red",
             width: grid - 1,
             height: grid - 1
         });
     }
 
-    // Configurações de controle de direção da cobra usando as setas
-    // Observação: isso ocorre fora do loop principal para ter uma resposta
-    // mais imediata (não limitada a 15fps)
-    kontra.onKey('arrowleft', function () {
-        // Evita que a cobra volte diretamente para trás se estiver indo para a direita
-        if (snake.dx === 0) {
-            snake.dx = -grid;
+
+    /* ----------------------------------------------------------------
+     * 4) CONFIGURANDO CONTROLES (TECLAS DE DIREÇÃO)
+     * ---------------------------------------------------------------- */
+    kontra.onKey("p", function () {
+        autoPilotActive = !autoPilotActive;
+    });
+
+    kontra.onKey("arrowleft", function () {
+        if (autoPilotActive) {
+            autoPilotActive = false;
+        }
+        if (snake.dx === 0) { // snake esta se movendo na vertical
+            snake.dx = -grid;   // Muda para esquerda
             snake.dy = 0;
         }
     });
-    kontra.onKey('arrowup', function () {
-        if (snake.dy === 0) {
-            snake.dy = -grid;
-            snake.dx = 0;
+
+    kontra.onKey("arrowright", function () {
+        if (autoPilotActive) {
+            autoPilotActive = false;
         }
-    });
-    kontra.onKey('arrowright', function () {
         if (snake.dx === 0) {
-            snake.dx = grid;
+            snake.dx = grid;    // Muda para direita
             snake.dy = 0;
         }
     });
-    kontra.onKey('arrowdown', function () {
-        if (snake.dy === 0) {
-            snake.dy = grid;
+
+    kontra.onKey("arrowup", function () {
+        if (autoPilotActive) {
+            autoPilotActive = false;
+        }
+        if (snake.dy === 0) { // snake esta se movendo na horizontal
+            snake.dy = -grid; // Muda para cima
             snake.dx = 0;
         }
     });
 
-    // Cria um GameLoop da Kontra.js
-    // Define a taxa de quadros em 15fps (que funciona bem para Snake)
-    let loop = kontra.GameLoop({
-        fps: 10,
+    kontra.onKey("arrowdown", function () {
+        if (autoPilotActive) {
+            autoPilotActive = false;
+        }
+        if (snake.dy === 0) {
+            snake.dy = grid; // Muda para baixo
+            snake.dx = 0;
+        }
+    });
+
+    /* ----------------------------------------------------------------
+     * 5) LOOP PRINCIPAL DO JOGO
+     * ---------------------------------------------------------------- */
+    const loop = kontra.GameLoop({
+        fps: fps, // Taxa de atualização ~10fps (ou 15fps conforme desejado)
         update: function () {
+            // Se autopilot estiver ligado, atualiza a direção antes de update()
+            if (autoPilotActive) {
+                autoPilot(snake, apple, grid);
+            }
             snake.update();
         },
         render: function () {
-            infos.innerHTML = "Infos: <br> numRows: " + numRows + "<br> numCols: " + numCols + "<br> grid: " + grid + "<br> freeCells: " + freeCells.length;
-            infos.innerHTML = infos.innerHTML + "<br> snake.cells: " + snake.cells.length + "<br> snake.x: " + snake.x + "<br> snake.y: " + snake.y;
-            infos.innerHTML = infos.innerHTML + "<br> apple.x: " + apple.x + "<br> apple.y: " + apple.y;
-            apple.render();
-            snake.render();
+            updateInfos();   // Atualiza informações de debug
+            apple.render();  // Render da maçã
+            snake.render();  // Render da cobra
         }
     });
 
-    // Inicializa as posições da cobra e da maçã
-    reset();
-    // Inicia o loop de jogo
-    loop.start();
+
+    /* ----------------------------------------------------------------
+     * 6) INICIALIZAÇÃO
+     * ---------------------------------------------------------------- */
+    reset();     // Reseta (posiciona cobra e maçã)
+    loop.start(); // Inicia o loop do jogo
 })();
