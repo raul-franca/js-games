@@ -1,4 +1,57 @@
+/* Reset básico para remover margens/padding do navegador */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Corpo da página em estilo retrô */
 body {
-    font-family: 'Press Start 2P', sans-serif;
+    font-family: 'Press Start 2P', sans-serif; /* já importado no HTML */
+    background-color: #000; /* fundo preto para estilo arcade */
+    color: #fff; /* texto branco */
+
+    /* CENTRALIZAÇÃO GERAL */
+    display: flex;
+    flex-direction: column;
+    align-items: center;    /* centraliza conteúdo horizontalmente */
+    justify-content: flex-start; /* alinha conteúdo no topo da página */
+
+    min-height: 100vh; /* garante que o body ocupe a tela inteira */
+    padding: 20px;
+}
+
+/* Título */
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px; /* você pode ajustar conforme desejar */
+    color: #f0f;     /* cor roxa retrô */
+}
+
+/* Container geral do jogo (para poder centralizar e dar espaçamento) */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Canvas centralizado e com borda para destacar */
+canvas {
+    display: block;       /* remove espaço extra em torno do canvas */
+    margin: 0 auto;       /* centraliza no container */
+    border: 3px solid #fff; /* borda branca para estilo arcade */
+}
+
+/* Se quiser um container para a pontuação */
+.score-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+#infos {
+    color: #ff4141;   /* tom de vermelho para destaque */
+    margin-top: 10px;
+    text-align: center;
 }
 

@@ -8,18 +8,19 @@
     <script src="../kontra/kontra.js"></script>
 </head>
 <body>
-<h1>Snake</h1>
-<div>
-    <span>Score: </span>
-    <span id="score"></span>
-</div>
-<div>
-    <canvas id="snake-game" style="background: #333333" width="600" height="300"></canvas>
-    <div id="infos" style="padding: 15px; color: darkred">INOFS:</div>
+    <h1>Snake</h1>
 
-</div>
+    <div class="game-container">
 
-<script src="src/snake.js"></script>
+        <div class="score-container">
+            <span>Score: </span>
+            <span id="score">0</span>
+        </div>
 
+        <canvas id="snake-game" width="900" height="420" style="background: #333"></canvas>
+
+        <div id="infos"></div>
+    </div>
+    <script src="src/snake.js"></script>
 </body>
 </html>
