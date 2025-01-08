@@ -59,7 +59,7 @@ class Bola {
     this.tamanho = 15; // Tamanho da bola
     this.velocidadeX = 5; // Velocidade de movimento da bola no eixo x
     this.velocidadeY = 5; // Velocidade de movimento da bola no eixo y
-     this.somColisao = loadSound('assets/impact-sound-effect-8-bit-retro-151796.mp3');
+    this.somColisao = loadSound('assets/impact-sound-effect-8-bit-retro-151796.mp3');
   }
 
   mover() {
@@ -68,10 +68,7 @@ class Bola {
   }
 
   verificarColisaoComParede() {
-    if (this.y < alturaBarraHorizontal ) {
-      this.velocidadeY *= -1; // Inverte a direção da bola ao colidir com as paredes superior e inferior
-    }
-    else if(this.y + this.tamanho > height - alturaBarraHorizontal ) {
+    if (this.y < alturaBarraHorizontal +10 ||this.y + this.tamanho > height - alturaBarraHorizontal ) {
       this.velocidadeY *= -1; // Inverte a direção da bola ao colidir com as paredes superior e inferior
     }
   }
@@ -150,7 +147,7 @@ function setup() {
 
 // Função de desenho (executada repetidamente)
 function draw() {
-  background(0); // Limpa o canvas com a cor preta
+  background(0); // Limpa o canvas com preto
 
   // Desenho das barras horizontais
   fill(245);
