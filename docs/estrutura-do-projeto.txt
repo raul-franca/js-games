@@ -26,12 +26,12 @@
 │   └── src
 │       ├── main.js
 │       └── snake.js
-└── space-invaders
+└── pedra-papel-tesoura
     ├── assets
     │   └── style.css
     ├── index.html
     └── src
         ├── main.js
-        └── space-invaders.js
+        └── pedra-papel-tesoura.js
 
 13 directories, 22 files
